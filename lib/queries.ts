@@ -3,6 +3,13 @@ import type { Post, PostFilters } from "@/lib/types";
 
 const PAGE_SIZE = 12;
 
+class FetchError extends Error {
+  constructor(message: string, public readonly code: string) {
+    super(message);
+    this.name = "FetchError";
+  }
+}
+
 export async function fetchPosts(filters: PostFilters): Promise<{
   posts: Post[];
   total: number;
@@ -61,8 +68,7 @@ export async function fetchPosts(filters: PostFilters): Promise<{
   const { data, count, error } = await query;
 
   if (error) {
-    console.error("fetchPosts error:", error);
-    return { posts: [], total: 0, page, totalPages: 0 };
+    throw new FetchError(`fetchPosts failed: ${error.message}`, error.code);
   }
 
   const total = count || 0;
@@ -85,8 +91,7 @@ export async function fetchDistinctLocations(): Promise<string[]> {
     .eq("is_hidden", false);
 
   if (error) {
-    console.error("fetchDistinctLocations error:", error);
-    return [];
+    throw new FetchError(`fetchDistinctLocations failed: ${error.message}`, error.code);
   }
 
   const unique = [...new Set(data.map((d) => d.location_name as string))];

@@ -1,4 +1,5 @@
-const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN!;
+import { getEnv } from "@/lib/env";
+
 const APIFY_ACTOR_ID = "apify~instagram-hashtag-scraper";
 
 interface ApifyRunOptions {
@@ -8,6 +9,15 @@ interface ApifyRunOptions {
 }
 
 export async function startApifyRun({ hashtags, resultsLimit, webhookUrl }: ApifyRunOptions) {
+  const token = getEnv("APIFY_API_TOKEN");
+
+  if (!Array.isArray(hashtags) || hashtags.length === 0) {
+    throw new Error("hashtags must be a non-empty array");
+  }
+  if (typeof resultsLimit !== "number" || resultsLimit < 1 || resultsLimit > 1000) {
+    throw new Error("resultsLimit must be a number between 1 and 1000");
+  }
+
   const input = {
     hashtags,
     resultsLimit,
@@ -15,13 +25,10 @@ export async function startApifyRun({ hashtags, resultsLimit, webhookUrl }: Apif
     searchType: "hashtag",
   };
 
-  const url = `https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/runs?token=${APIFY_API_TOKEN}`;
-
   const body: Record<string, unknown> = { ...input };
-
   const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-  const params = new URLSearchParams({ token: APIFY_API_TOKEN });
+  const params = new URLSearchParams({ token });
   if (webhookUrl) {
     params.set("webhooks", JSON.stringify([
       {
@@ -45,8 +52,14 @@ export async function startApifyRun({ hashtags, resultsLimit, webhookUrl }: Apif
 }
 
 export async function getApifyDatasetItems(datasetId: string) {
+  const token = getEnv("APIFY_API_TOKEN");
+
+  if (!/^[\w-]+$/.test(datasetId)) {
+    throw new Error("Invalid dataset ID format");
+  }
+
   const res = await fetch(
-    `https://api.apify.com/v2/datasets/${datasetId}/items?token=${APIFY_API_TOKEN}&format=json`
+    `https://api.apify.com/v2/datasets/${datasetId}/items?token=${token}&format=json`
   );
 
   if (!res.ok) {
@@ -57,8 +70,14 @@ export async function getApifyDatasetItems(datasetId: string) {
 }
 
 export async function getApifyRunDetails(runId: string) {
+  const token = getEnv("APIFY_API_TOKEN");
+
+  if (!/^[\w-]+$/.test(runId)) {
+    throw new Error("Invalid run ID format");
+  }
+
   const res = await fetch(
-    `https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_API_TOKEN}`
+    `https://api.apify.com/v2/actor-runs/${runId}?token=${token}`
   );
 
   if (!res.ok) {
@@ -87,27 +106,36 @@ interface ApifyPost {
 }
 
 export function transformApifyPost(raw: ApifyPost) {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Invalid post data: expected an object");
+  }
+
+  const instagramId = raw.id || raw.shortCode;
+  if (!instagramId || typeof instagramId !== "string") {
+    throw new Error("Post missing required instagram_id (id or shortCode)");
+  }
+
   const postType =
     raw.type === "Video" ? "reel" :
     raw.type === "Sidecar" ? "carousel" : "post";
 
   return {
-    instagram_id: raw.id || raw.shortCode || "",
+    instagram_id: instagramId,
     post_type: postType,
-    caption: raw.caption || null,
-    like_count: raw.likesCount || 0,
-    comment_count: raw.commentsCount || 0,
-    view_count: raw.videoViewCount || null,
-    location_name: raw.locationName || null,
-    author_username: raw.ownerUsername || "unknown",
-    author_profile_pic: raw.ownerProfilePicUrl || null,
-    thumbnail_url: raw.displayUrl || null,
-    media_url: raw.url || null,
+    caption: typeof raw.caption === "string" ? raw.caption : null,
+    like_count: typeof raw.likesCount === "number" ? raw.likesCount : 0,
+    comment_count: typeof raw.commentsCount === "number" ? raw.commentsCount : 0,
+    view_count: typeof raw.videoViewCount === "number" ? raw.videoViewCount : null,
+    location_name: typeof raw.locationName === "string" ? raw.locationName : null,
+    author_username: typeof raw.ownerUsername === "string" ? raw.ownerUsername : "unknown",
+    author_profile_pic: typeof raw.ownerProfilePicUrl === "string" ? raw.ownerProfilePicUrl : null,
+    thumbnail_url: typeof raw.displayUrl === "string" ? raw.displayUrl : null,
+    media_url: typeof raw.url === "string" ? raw.url : null,
     permalink: raw.shortCode
       ? `https://www.instagram.com/p/${raw.shortCode}/`
-      : raw.url || "",
-    hashtags: raw.hashtags || [],
-    published_at: raw.timestamp || new Date().toISOString(),
+      : (typeof raw.url === "string" ? raw.url : ""),
+    hashtags: Array.isArray(raw.hashtags) ? raw.hashtags : [],
+    published_at: typeof raw.timestamp === "string" ? raw.timestamp : new Date().toISOString(),
     is_hidden: false,
     collected_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

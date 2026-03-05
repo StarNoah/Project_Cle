@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { startApifyRun, getApifyRunDetails, getApifyDatasetItems, transformApifyPost } from "@/lib/apify";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getEnv } from "@/lib/env";
 
 const HASHTAGS = [
   "클라이밍",
@@ -11,9 +12,13 @@ const HASHTAGS = [
   "클라이밍장",
 ];
 
+const VALID_STATUSES = ["RUNNING", "READY", "SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"];
+
 export async function GET(request: NextRequest) {
+  const cronSecret = getEnv("CRON_SECRET");
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -40,15 +45,26 @@ export async function GET(request: NextRequest) {
     });
 
     if (isLocal) {
-      // Polling mode for local development
       const runId = runResult.data?.id;
       if (!runId) throw new Error("No run ID returned");
 
       let status = "RUNNING";
-      while (status === "RUNNING" || status === "READY") {
+      let iterations = 0;
+      const maxIterations = 120; // 10 minutes max
+
+      while ((status === "RUNNING" || status === "READY") && iterations < maxIterations) {
         await new Promise((r) => setTimeout(r, 5000));
         const details = await getApifyRunDetails(runId);
         status = details.data?.status;
+        iterations++;
+
+        if (!VALID_STATUSES.includes(status)) {
+          throw new Error(`Unexpected Apify run status: ${status}`);
+        }
+      }
+
+      if (status !== "SUCCEEDED") {
+        throw new Error(`Apify run ended with status: ${status}`);
       }
 
       const details = await getApifyRunDetails(runId);
@@ -84,7 +100,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Webhook mode: just start the run and return
     return NextResponse.json({
       success: true,
       mode: "webhook",
