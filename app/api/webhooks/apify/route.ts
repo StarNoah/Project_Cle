@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       .select("id, name, hashtags, region, area");
     const gyms: Gym[] = (gymsData as Gym[]) || [];
 
-    const MIN_LIKES = 10;
+    const MIN_LIKES = 5;
     const items = await getApifyDatasetItems(datasetId);
     const posts = items.flatMap((item: Record<string, unknown>) => {
       try { return [transformApifyPost(item)]; } catch { return []; }

@@ -12,7 +12,7 @@ const HASHTAGS = [
   "클라이밍장",
 ];
 
-const MIN_LIKES = 10;
+const MIN_LIKES = 5;
 
 const VALID_STATUSES = ["RUNNING", "READY", "SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"];
 
