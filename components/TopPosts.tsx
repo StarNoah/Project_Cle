@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
+import { PostModal } from "./PostModal";
 import type { Post } from "@/lib/types";
 
 interface TopPostsProps {
@@ -8,17 +12,18 @@ interface TopPostsProps {
 const MEDAL = ["1st", "2nd", "3rd"];
 
 export function TopPosts({ posts }: TopPostsProps) {
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+
   if (posts.length === 0) return null;
 
   return (
+    <>
     <div className="grid grid-cols-3 gap-2 sm:gap-3">
       {posts.slice(0, 3).map((post, i) => (
-        <a
+        <button
           key={post.instagram_id}
-          href={post.permalink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group relative flex flex-col sm:flex-row gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden transition-shadow hover:shadow-lg"
+          onClick={() => setSelectedPost(post)}
+          className="group relative flex flex-col sm:flex-row gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden transition-shadow hover:shadow-lg text-left w-full"
         >
           <div className="relative w-full sm:w-20 aspect-square sm:h-20 sm:aspect-auto flex-shrink-0 rounded-lg overflow-hidden bg-[var(--muted)]">
             {post.thumbnail_url ? (
@@ -51,8 +56,10 @@ export function TopPosts({ posts }: TopPostsProps) {
               <span className="hidden sm:inline">💬 {post.comment_count.toLocaleString()}</span>
             </div>
           </div>
-        </a>
+        </button>
       ))}
     </div>
+    {selectedPost && <PostModal post={selectedPost} onClose={() => setSelectedPost(null)} />}
+    </>
   );
 }
