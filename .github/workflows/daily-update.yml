@@ -1,0 +1,40 @@
+name: Daily Climbing Gym Update
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # 매일 UTC 00:00 (KST 09:00)
+  workflow_dispatch:  # 수동 실행 가능
+
+defaults:
+  run:
+    working-directory: climbing-gym-tracker
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run climbing gym tracker
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python -m src.main
+
+      - name: Commit and push changes
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add climbing-gym-tracker/data/climbing_gyms.csv
+          git diff --cached --quiet || git commit -m "chore: update climbing gym data $(date +%Y-%m-%d)"
+          git push
