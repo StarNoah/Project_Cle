@@ -66,6 +66,7 @@ function generateHashtags(name: string): string[] {
 
 function isClimbingGym(name: string): boolean {
   if (name.endsWith("입구")) return false;
+  if (/센터|센타/.test(name)) return false;
   return true;
 }
 

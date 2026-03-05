@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { startApifyRun, getApifyRunDetails, getApifyDatasetItems, transformApifyPost } from "@/lib/apify";
 import { createServiceClient } from "@/lib/supabase/server";
-import { matchPostToGyms } from "@/lib/gym-matching";
+import { matchPostToGyms, getAllGymHashtags } from "@/lib/gym-matching";
 import { matchPostStyles } from "@/lib/style-matching";
 import type { Gym } from "@/lib/types";
 
-
-const HASHTAGS = [
+const BASE_HASHTAGS = [
   "클라이밍",
   "볼더링",
   "클라이밍장",
 ];
+
+const PRIORITY_REGIONS = ["서울", "경기"];
 
 const MIN_LIKES = 5;
 
@@ -41,6 +42,12 @@ export async function GET(request: NextRequest) {
       .from("gyms")
       .select("id, name, hashtags, region, area");
     const gyms: Gym[] = (gymsData as Gym[]) || [];
+
+    // 서울/경기 암장 해시태그 추가 (센터/센타 제외는 DB 단에서 이미 필터됨)
+    const priorityGyms = gyms.filter((g) => g.region && PRIORITY_REGIONS.includes(g.region));
+    const gymHashtags = getAllGymHashtags(priorityGyms).slice(0, 50);
+    const HASHTAGS = [...new Set([...BASE_HASHTAGS, ...gymHashtags])];
+
     // Hide non-reel posts
     await supabase
       .from("posts")
