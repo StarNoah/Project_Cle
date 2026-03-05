@@ -177,6 +177,10 @@ export async function fetchTopPosts(filters: PostFilters, limit = 3): Promise<Po
     query = query.eq("post_type", filters.postType);
   }
 
+  if (filters.style) {
+    query = query.contains("styles", [filters.style]);
+  }
+
   const { data, error } = await query;
 
   if (error) {
