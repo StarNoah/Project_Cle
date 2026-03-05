@@ -7,7 +7,10 @@ import requests
 NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID", "")
 NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET", "")
 
-REGIONS = ["서울", "경기", "인천", "부산", "대구", "대전", "광주", "울산", "세종"]
+REGIONS = [
+    "서울", "경기", "인천", "부산", "대구", "대전", "광주", "울산", "세종",
+    "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
+]
 KEYWORDS = ["클라이밍장", "볼더링", "클라이밍센터", "클라이밍짐"]
 
 API_URL = "https://openapi.naver.com/v1/search/local.json"
@@ -21,6 +24,12 @@ def _strip_html(text: str) -> str:
 
 def _normalize_address(address: str) -> str:
     return re.sub(r"\s+", " ", address).strip()
+
+
+def _extract_region(address: str) -> str:
+    """주소에서 시/도를 추출한다."""
+    first = address.split()[0] if address else ""
+    return first
 
 
 def search_climbing_gyms() -> list[dict]:
@@ -57,7 +66,7 @@ def search_climbing_gyms() -> list[dict]:
                         "name": _strip_html(item.get("title", "")),
                         "address": address,
                         "telephone": item.get("telephone", ""),
-                        "region": region,
+                        "region": _extract_region(address),
                     })
 
                 start += DISPLAY
