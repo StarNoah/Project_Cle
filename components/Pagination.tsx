@@ -10,11 +10,14 @@ interface PaginationProps {
 function buildHref(filters: PostFilters, page: number): string {
   const params = new URLSearchParams();
   if (filters.postType) params.set("postType", filters.postType);
-  if (filters.location) params.set("location", filters.location);
+  if (filters.region) params.set("region", filters.region);
+  if (filters.period) params.set("period", filters.period);
   if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
   if (filters.dateTo) params.set("dateTo", filters.dateTo);
   if (filters.search) params.set("search", filters.search);
   if (filters.sort) params.set("sort", filters.sort);
+  if (filters.gymId) params.set("gymId", String(filters.gymId));
+  if (filters.style) params.set("style", filters.style);
   params.set("page", String(page));
   return `/?${params.toString()}`;
 }

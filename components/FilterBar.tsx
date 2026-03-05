@@ -2,14 +2,15 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
-import type { PostFilters } from "@/lib/types";
+import type { PostFilters, Gym } from "@/lib/types";
 
 interface FilterBarProps {
-  locations: string[];
+  gyms: Gym[];
+  regions: string[];
   currentFilters: PostFilters;
 }
 
-export function FilterBar({ locations, currentFilters }: FilterBarProps) {
+export function FilterBar({ gyms, regions, currentFilters }: FilterBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -38,42 +39,47 @@ export function FilterBar({ locations, currentFilters }: FilterBarProps) {
   );
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3 p-4 rounded-lg bg-[var(--card)] border border-[var(--border)]">
-      <select
-        value={currentFilters.sort || "likes"}
-        onChange={(e) => updateFilter("sort", e.target.value)}
-        className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm"
-      >
-        <option value="likes">좋아요순</option>
-        <option value="comments">댓글순</option>
-        <option value="recent">최신순</option>
-      </select>
+    <div className="flex flex-col gap-3 p-3 sm:p-4 rounded-lg bg-[var(--card)] border border-[var(--border)]">
+      <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-3">
+        <select
+          value={currentFilters.period || ""}
+          onChange={(e) => updateFilter("period", e.target.value)}
+          className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm"
+        >
+          <option value="">전체 기간</option>
+          <option value="daily">일간</option>
+          <option value="weekly">주간</option>
+          <option value="monthly">월간</option>
+        </select>
 
-      <select
-        value={currentFilters.postType || "all"}
-        onChange={(e) => updateFilter("postType", e.target.value === "all" ? "" : e.target.value)}
-        className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm"
-      >
-        <option value="all">전체 타입</option>
-        <option value="post">사진</option>
-        <option value="reel">릴스</option>
-        <option value="carousel">캐러셀</option>
-      </select>
+        <select
+          value={currentFilters.region || ""}
+          onChange={(e) => updateFilter("region", e.target.value)}
+          className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm"
+        >
+          <option value="">전체 지역</option>
+          {regions.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
 
-      <select
-        value={currentFilters.location || ""}
-        onChange={(e) => updateFilter("location", e.target.value)}
-        className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm max-w-[200px]"
-      >
-        <option value="">전체 위치</option>
-        {locations.map((loc) => (
-          <option key={loc} value={loc}>
-            {loc}
-          </option>
-        ))}
-      </select>
+        <select
+          value={currentFilters.gymId?.toString() || ""}
+          onChange={(e) => updateFilter("gymId", e.target.value)}
+          className="col-span-2 sm:col-span-1 px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm sm:max-w-[200px]"
+        >
+          <option value="">전체 클라이밍장</option>
+          {gyms.map((gym) => (
+            <option key={gym.id} value={gym.id.toString()}>
+              {gym.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <form onSubmit={handleSearch} className="flex gap-2 flex-1">
+      <form onSubmit={handleSearch} className="flex gap-2">
         <input
           type="text"
           name="search"
@@ -83,7 +89,7 @@ export function FilterBar({ locations, currentFilters }: FilterBarProps) {
         />
         <button
           type="submit"
-          className="px-4 py-2 rounded-md bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-light)] transition-colors"
+          className="px-4 py-2 rounded-md bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-light)] transition-colors whitespace-nowrap"
         >
           검색
         </button>

@@ -23,7 +23,7 @@ export function PostCard({ post, rank }: PostCardProps) {
       rel="noopener noreferrer"
       className="group block rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden transition-shadow hover:shadow-lg"
     >
-      <div className="relative aspect-square bg-[var(--muted)]">
+      <div className="relative aspect-[3/4] bg-[var(--muted)]">
         {post.thumbnail_url ? (
           <Image
             src={post.thumbnail_url}
@@ -49,44 +49,44 @@ export function PostCard({ post, rank }: PostCardProps) {
         </div>
       </div>
 
-      <div className="p-4 space-y-2">
-        <div className="flex items-center gap-2">
+      <div className="p-2 sm:p-3 space-y-1 sm:space-y-2">
+        <div className="flex items-center gap-1.5">
           {post.author_profile_pic && (
             <Image
               src={post.author_profile_pic}
               alt={post.author_username}
-              width={24}
-              height={24}
-              className="rounded-full"
+              width={20}
+              height={20}
+              className="rounded-full flex-shrink-0"
             />
           )}
-          <span className="text-sm font-semibold truncate">
+          <span className="text-xs sm:text-sm font-semibold truncate">
             @{post.author_username}
           </span>
         </div>
 
         {post.caption && (
-          <p className="text-sm text-[var(--muted-foreground)] line-clamp-2">
+          <p className="text-xs text-[var(--muted-foreground)] line-clamp-2 hidden sm:block">
             {post.caption}
           </p>
         )}
 
-        <div className="flex items-center gap-4 text-sm text-[var(--muted-foreground)]">
+        <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-[var(--muted-foreground)]">
           <span title="좋아요">❤️ {post.like_count.toLocaleString()}</span>
           <span title="댓글">💬 {post.comment_count.toLocaleString()}</span>
           {post.view_count != null && (
-            <span title="조회수">👁️ {post.view_count.toLocaleString()}</span>
+            <span title="조회수" className="hidden sm:inline">👁️ {post.view_count.toLocaleString()}</span>
           )}
         </div>
 
         <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
           {post.location_name && (
-            <span className="truncate max-w-[60%]" title={post.location_name}>
+            <span className="truncate max-w-[60%] hidden sm:inline" title={post.location_name}>
               📍 {post.location_name}
             </span>
           )}
           <span>
-            {format(new Date(post.published_at), "yyyy.MM.dd", { locale: ko })}
+            {format(new Date(post.published_at), "MM.dd", { locale: ko })}
           </span>
         </div>
       </div>

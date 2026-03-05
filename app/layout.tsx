@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ClimbingGram - 클라이밍 인스타그램 랭킹",
-  description: "인기 클라이밍/볼더링 인스타그램 게시물 랭킹 사이트",
+  title: "돌스타그램 - 클라이밍 릴스 랭킹",
+  description: "인기 클라이밍/볼더링 인스타그램 릴스 랭킹 사이트",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "돌스타그램",
+  },
 };
 
 export default function RootLayout({
@@ -27,21 +34,22 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
+        <meta name="theme-color" content="#6d28d9" />
         <header className="border-b border-[var(--border)] bg-[var(--card)]">
           <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <span className="text-2xl font-bold text-[var(--accent)]">
-                ClimbingGram
+                돌스타그램
               </span>
               <span className="text-sm text-[var(--muted-foreground)]">
-                볼더링 랭킹
+                클라이밍 랭킹
               </span>
-            </a>
+            </Link>
           </div>
         </header>
-        <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-6">{children}</main>
         <footer className="border-t border-[var(--border)] mt-12 py-6 text-center text-sm text-[var(--muted-foreground)]">
-          ClimbingGram &copy; {new Date().getFullYear()}
+          돌스타그램 &copy; {new Date().getFullYear()}
         </footer>
       </body>
     </html>

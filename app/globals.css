@@ -37,3 +37,10 @@ body {
 @utility skeleton {
   @apply animate-pulse rounded-md bg-[var(--muted)];
 }
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -21,7 +21,7 @@ export async function startApifyRun({ hashtags, resultsLimit, webhookUrl }: Apif
   const input = {
     hashtags,
     resultsLimit,
-    resultsType: "posts",
+    resultsType: "reels",
     searchType: "hashtag",
   };
 

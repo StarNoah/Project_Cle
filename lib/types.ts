@@ -13,6 +13,7 @@ export interface Post {
   media_url: string | null;
   permalink: string;
   hashtags: string[];
+  styles: string[];
   published_at: string;
   is_hidden: boolean;
   collected_at: string;
@@ -28,12 +29,23 @@ export interface CollectionLog {
   created_at: string;
 }
 
+export interface Gym {
+  id: number;
+  name: string;
+  hashtags: string[];
+  region: string | null;
+  area: string | null;
+}
+
 export interface PostFilters {
   postType?: string;
-  location?: string;
+  region?: string;
   dateFrom?: string;
   dateTo?: string;
   search?: string;
   sort?: string;
+  period?: string;
   page?: number;
+  gymId?: number;
+  style?: string;
 }

@@ -1,24 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { startApifyRun, getApifyRunDetails, getApifyDatasetItems, transformApifyPost } from "@/lib/apify";
 import { createServiceClient } from "@/lib/supabase/server";
-import { getEnv } from "@/lib/env";
+import { matchPostToGyms } from "@/lib/gym-matching";
+import { matchPostStyles } from "@/lib/style-matching";
+import type { Gym } from "@/lib/types";
+
 
 const HASHTAGS = [
   "클라이밍",
   "볼더링",
-  "climbing",
-  "bouldering",
-  "rockclimbing",
   "클라이밍장",
 ];
+
+const MIN_LIKES = 10;
 
 const VALID_STATUSES = ["RUNNING", "READY", "SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"];
 
 export async function GET(request: NextRequest) {
-  const cronSecret = getEnv("CRON_SECRET");
+  const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
 
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -34,6 +36,18 @@ export async function GET(request: NextRequest) {
   const logId = log?.id;
 
   try {
+    // Fetch gyms and merge hashtags
+    const { data: gymsData } = await supabase
+      .from("gyms")
+      .select("id, name, hashtags, region, area");
+    const gyms: Gym[] = (gymsData as Gym[]) || [];
+    // Hide non-reel posts
+    await supabase
+      .from("posts")
+      .update({ is_hidden: true })
+      .neq("post_type", "reel")
+      .eq("is_hidden", false);
+
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const webhookUrl = `${siteUrl}/api/webhooks/apify`;
     const isLocal = siteUrl.includes("localhost");
@@ -72,12 +86,32 @@ export async function GET(request: NextRequest) {
       if (!datasetId) throw new Error("No dataset ID");
 
       const items = await getApifyDatasetItems(datasetId);
-      const posts = items.map(transformApifyPost);
+      const posts = items.flatMap((item: Record<string, unknown>) => {
+        try { return [transformApifyPost(item)]; } catch { return []; }
+      });
+      console.log("raw items:", items.length, "after transform:", posts.length, "types:", [...new Set(posts.map((p: {post_type: string}) => p.post_type))]);
+      const filteredPosts = posts.filter((post: { like_count: number; post_type: string }) => post.like_count >= MIN_LIKES && post.post_type === "reel");
 
-      for (const post of posts) {
-        await supabase
+      for (const post of filteredPosts) {
+        const styles = matchPostStyles({ hashtags: post.hashtags || [], caption: post.caption });
+        const { data: upserted } = await supabase
           .from("posts")
-          .upsert(post, { onConflict: "instagram_id" });
+          .upsert({ ...post, styles }, { onConflict: "instagram_id" })
+          .select("id, hashtags, caption");
+
+        if (upserted && upserted.length > 0) {
+          const row = upserted[0];
+          const matchedGymIds = matchPostToGyms(
+            { hashtags: row.hashtags || [], caption: row.caption },
+            gyms
+          );
+          if (matchedGymIds.length > 0) {
+            await supabase.from("post_gyms").upsert(
+              matchedGymIds.map((gymId) => ({ post_id: row.id, gym_id: gymId })),
+              { onConflict: "post_id,gym_id" }
+            );
+          }
+        }
       }
 
       const duration = Date.now() - startTime;
@@ -86,7 +120,7 @@ export async function GET(request: NextRequest) {
           .from("collection_logs")
           .update({
             status: "success",
-            posts_collected: posts.length,
+            posts_collected: filteredPosts.length,
             duration_ms: duration,
           })
           .eq("id", logId);
@@ -95,7 +129,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         mode: "polling",
-        postsCollected: posts.length,
+        postsCollected: filteredPosts.length,
+        rawItems: items.length,
+        transformed: posts.length,
         duration,
       });
     }
