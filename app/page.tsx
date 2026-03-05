@@ -6,7 +6,7 @@ import { Pagination } from "@/components/Pagination";
 import { StyleTabs } from "@/components/StyleTabs";
 import type { PostFilters } from "@/lib/types";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
