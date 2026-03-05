@@ -72,6 +72,9 @@ DISTRICTS = {
 
 KEYWORDS = ["클라이밍장", "볼더링", "클라이밍센터", "클라이밍짐"]
 
+# 결과 필터링용 키워드 (이름에 하나라도 포함되어야 클라이밍장으로 판단)
+FILTER_KEYWORDS = ["클라이밍", "볼더링", "암벽", "클라임"]
+
 API_URL = "https://openapi.naver.com/v1/search/local.json"
 DISPLAY = 5
 MAX_START = 45
@@ -91,6 +94,11 @@ def _extract_region(address: str) -> str:
     return first
 
 
+def _is_climbing_gym(name: str) -> bool:
+    """이름에 클라이밍 관련 키워드가 포함되어 있는지 확인한다."""
+    return any(kw in name for kw in FILTER_KEYWORDS)
+
+
 def search_climbing_gyms() -> list[dict]:
     """모든 지역/키워드 조합으로 네이버 로컬 검색을 수행하고 중복 제거된 결과를 반환한다."""
     if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
@@ -103,27 +111,41 @@ def search_climbing_gyms() -> list[dict]:
 
     seen_addresses: set[str] = set()
     results: list[dict] = []
+    error_count = 0
+
+    total_districts = sum(len(d) for d in DISTRICTS.values())
+    processed = 0
 
     for sido, districts in DISTRICTS.items():
         for district in districts:
+            processed += 1
             for keyword in KEYWORDS:
                 query = f"{sido} {district} {keyword}"
                 start = 1
                 while start <= MAX_START:
                     params = {"query": query, "display": DISPLAY, "start": start}
-                    resp = requests.get(API_URL, headers=headers, params=params, timeout=10)
-                    resp.raise_for_status()
+                    try:
+                        resp = requests.get(API_URL, headers=headers, params=params, timeout=10)
+                        resp.raise_for_status()
+                    except requests.RequestException as e:
+                        error_count += 1
+                        print(f"  [오류] {query} (start={start}): {e}")
+                        break
+
                     items = resp.json().get("items", [])
                     if not items:
                         break
 
                     for item in items:
+                        name = _strip_html(item.get("title", ""))
                         address = _normalize_address(item.get("address", ""))
                         if not address or address in seen_addresses:
                             continue
+                        if not _is_climbing_gym(name):
+                            continue
                         seen_addresses.add(address)
                         results.append({
-                            "name": _strip_html(item.get("title", "")),
+                            "name": name,
                             "address": address,
                             "telephone": item.get("telephone", ""),
                             "region": _extract_region(address),
@@ -131,5 +153,11 @@ def search_climbing_gyms() -> list[dict]:
 
                     start += DISPLAY
                     time.sleep(0.05)
+
+            if processed % 50 == 0 or processed == total_districts:
+                print(f"[진행] {processed}/{total_districts} 지역 완료 | 수집: {len(results)}건")
+
+    if error_count:
+        print(f"[경고] API 오류 {error_count}건 발생 (해당 쿼리 건너뜀)")
 
     return results
