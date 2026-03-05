@@ -50,12 +50,12 @@ export function PostModal({ post, onClose }: PostModalProps) {
         </div>
 
         {/* 미리보기 */}
-        <div className="w-full sm:w-[400px]">
+        <div className="w-full sm:w-[400px] overflow-y-auto" style={{ maxHeight: "calc(100dvh - 120px)" }}>
           {shortcode ? (
             <iframe
               src={`https://www.instagram.com/p/${shortcode}/embed/`}
               className="w-full"
-              style={{ height: "560px", border: "none" }}
+              style={{ height: "min(560px, calc(100dvh - 130px))", border: "none" }}
               loading="lazy"
               allowFullScreen
             />

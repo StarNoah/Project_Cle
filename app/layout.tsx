@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
@@ -24,6 +24,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#6d28d9",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,7 +38,6 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
-        <meta name="theme-color" content="#6d28d9" />
         <header className="border-b border-[var(--border)] bg-[var(--card)]">
           <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
