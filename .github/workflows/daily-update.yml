@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -33,14 +33,7 @@ jobs:
         run: python -m src.main
 
       - name: Commit and push changes
-        working-directory: .
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add climbing-gym-tracker/data/climbing_gyms.csv
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: update climbing gym data $(date +%Y-%m-%d)"
-            git fetch origin main
-            git rebase origin/main
-            git push
-          fi
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update climbing gym data"
+          file_pattern: "climbing-gym-tracker/data/climbing_gyms.csv"
