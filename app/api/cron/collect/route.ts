@@ -48,13 +48,6 @@ export async function GET(request: NextRequest) {
     const gymHashtags = getAllGymHashtags(priorityGyms).slice(0, 50);
     const HASHTAGS = [...new Set([...BASE_HASHTAGS, ...gymHashtags])];
 
-    // Hide non-reel posts
-    await supabase
-      .from("posts")
-      .update({ is_hidden: true })
-      .neq("post_type", "reel")
-      .eq("is_hidden", false);
-
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const webhookUrl = `${siteUrl}/api/webhooks/apify`;
     const isLocal = siteUrl.includes("localhost");
