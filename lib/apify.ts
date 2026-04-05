@@ -38,7 +38,7 @@ export async function startApifyRun({ hashtags, resultsLimit, webhookUrl }: Apif
         payloadTemplate: '{"runId": {{resource.id}}, "status": {{resource.status}}}',
       },
     ]);
-    url.searchParams.set("webhooks", webhooks);
+    url.searchParams.set("webhooks", Buffer.from(webhooks).toString("base64"));
   }
 
   const res = await fetch(
