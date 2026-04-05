@@ -9,6 +9,7 @@ const BASE_HASHTAGS = [
   "클라이밍",
   "볼더링",
   "클라이밍장",
+  "돌스타그램",
 ];
 
 const PRIORITY_REGIONS = ["서울", "경기"];

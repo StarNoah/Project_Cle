@@ -62,6 +62,10 @@ export default async function Home({ searchParams }: PageProps) {
         totalPages={totalPages}
         filters={filters}
       />
+
+      <p className="text-center text-xs text-[var(--muted-foreground)]">
+        [#돌스타그램] 태그를 사용하면 보다 정확한 게시물 수집이 가능합니다!
+      </p>
     </div>
   );
 }
