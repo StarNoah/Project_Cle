@@ -5,6 +5,8 @@ import { matchPostToGyms } from "@/lib/gym-matching";
 import { matchPostStyles } from "@/lib/style-matching";
 import type { Gym } from "@/lib/types";
 
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   const adminSecret = process.env.ADMIN_SECRET;
@@ -30,27 +32,46 @@ export async function POST(request: NextRequest) {
     try { return [transformApifyPost(item)]; } catch { return []; }
   }).filter((post: { like_count: number }) => post.like_count >= MIN_LIKES);
 
+  // Batch upsert posts (50 at a time)
+  const BATCH = 50;
   let upserted = 0;
-  for (const post of posts) {
-    const styles = matchPostStyles({ hashtags: post.hashtags || [], caption: post.caption });
+  const allUpsertedRows: { id: string; hashtags: string[]; caption: string | null }[] = [];
+
+  for (let i = 0; i < posts.length; i += BATCH) {
+    const batch = posts.slice(i, i + BATCH).map((post) => {
+      const styles = matchPostStyles({ hashtags: post.hashtags || [], caption: post.caption });
+      return { ...post, styles };
+    });
+
     const { data: rows, error } = await supabase
       .from("posts")
-      .upsert({ ...post, styles }, { onConflict: "instagram_id" })
+      .upsert(batch, { onConflict: "instagram_id" })
       .select("id, hashtags, caption");
-    if (!error) upserted++;
 
-    if (rows && rows.length > 0) {
-      const row = rows[0];
-      const matchedGymIds = matchPostToGyms(
-        { hashtags: row.hashtags || [], caption: row.caption },
-        gyms
+    if (!error && rows) {
+      upserted += rows.length;
+      allUpsertedRows.push(...rows);
+    }
+  }
+
+  // Batch gym matching
+  const gymLinks: { post_id: string; gym_id: number }[] = [];
+  for (const row of allUpsertedRows) {
+    const matchedGymIds = matchPostToGyms(
+      { hashtags: row.hashtags || [], caption: row.caption },
+      gyms
+    );
+    for (const gymId of matchedGymIds) {
+      gymLinks.push({ post_id: row.id, gym_id: gymId });
+    }
+  }
+
+  if (gymLinks.length > 0) {
+    for (let i = 0; i < gymLinks.length; i += BATCH) {
+      await supabase.from("post_gyms").upsert(
+        gymLinks.slice(i, i + BATCH),
+        { onConflict: "post_id,gym_id" }
       );
-      if (matchedGymIds.length > 0) {
-        await supabase.from("post_gyms").upsert(
-          matchedGymIds.map((gymId) => ({ post_id: row.id, gym_id: gymId })),
-          { onConflict: "post_id,gym_id" }
-        );
-      }
     }
   }
 
@@ -59,5 +80,6 @@ export async function POST(request: NextRequest) {
     totalItems: items.length,
     transformed: posts.length,
     upserted,
+    gymLinks: gymLinks.length,
   });
 }
