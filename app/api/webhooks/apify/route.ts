@@ -1,32 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac, timingSafeEqual } from "crypto";
 import { getApifyRunDetails, getApifyDatasetItems, transformApifyPost } from "@/lib/apify";
 import { createServiceClient } from "@/lib/supabase/server";
 import { matchPostToGyms } from "@/lib/gym-matching";
 import { matchPostStyles } from "@/lib/style-matching";
 import type { Gym } from "@/lib/types";
 
-
-function verifySignature(body: string, signature: string | null): boolean {
-  if (!signature) return false;
-  const secret = process.env.WEBHOOK_SECRET;
-  if (!secret) return false;
-  const expected = createHmac("sha256", secret).update(body).digest("hex");
-  try {
-    return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
-  } catch {
-    return false;
-  }
-}
-
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
-
-  // HMAC signature verification
-  const signature = request.headers.get("x-apify-webhook-signature");
-  if (!verifySignature(rawBody, signature)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-  }
 
   const supabase = createServiceClient();
   const startTime = Date.now();
