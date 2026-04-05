@@ -28,19 +28,21 @@ export async function startApifyRun({ hashtags, resultsLimit, webhookUrl }: Apif
   const body: Record<string, unknown> = { ...input };
   const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-  const params = new URLSearchParams({ token });
+  const url = new URL(`https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/runs`);
+  url.searchParams.set("token", token);
   if (webhookUrl) {
-    params.set("webhooks", JSON.stringify([
+    const webhooks = JSON.stringify([
       {
         eventTypes: ["ACTOR.RUN.SUCCEEDED"],
         requestUrl: webhookUrl,
         payloadTemplate: '{"runId": {{resource.id}}, "status": {{resource.status}}}',
       },
-    ]));
+    ]);
+    url.searchParams.set("webhooks", webhooks);
   }
 
   const res = await fetch(
-    `https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/runs?${params}`,
+    url.toString(),
     { method: "POST", headers, body: JSON.stringify(body) }
   );
 
