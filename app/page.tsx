@@ -39,7 +39,7 @@ export default async function Home({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold">인기 클라이밍 릴스</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">인기 클라이밍 게시물</h1>
         <p className="text-[var(--muted-foreground)] mt-1 text-sm">
           총 {total.toLocaleString()}개의 게시물
         </p>

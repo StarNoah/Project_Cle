@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "돌스타그램 - 클라이밍 릴스 랭킹",
-  description: "인기 클라이밍/볼더링 인스타그램 릴스 랭킹 사이트",
+  title: "돌스타그램 - 클라이밍 게시물 랭킹",
+  description: "인기 클라이밍/볼더링 인스타그램 게시물 랭킹 사이트",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
