@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const items = await getApifyDatasetItems(datasetId);
     const posts = items.flatMap((item: Record<string, unknown>) => {
       try { return [transformApifyPost(item)]; } catch { return []; }
-    }).filter((post: { like_count: number; post_type: string }) => post.like_count >= MIN_LIKES && post.post_type === "reel");
+    }).filter((post: { like_count: number }) => post.like_count >= MIN_LIKES);
 
     let upserted = 0;
     for (const post of posts) {

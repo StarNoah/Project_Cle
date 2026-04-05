@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       const posts = items.flatMap((item: Record<string, unknown>) => {
         try { return [transformApifyPost(item)]; } catch { return []; }
       });
-      const filteredPosts = posts.filter((post: { like_count: number; post_type: string }) => post.like_count >= MIN_LIKES && post.post_type === "reel");
+      const filteredPosts = posts.filter((post: { like_count: number }) => post.like_count >= MIN_LIKES);
 
       for (const post of filteredPosts) {
         const styles = matchPostStyles({ hashtags: post.hashtags || [], caption: post.caption });
