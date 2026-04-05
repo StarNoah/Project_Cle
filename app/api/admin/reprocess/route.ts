@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   const items = await getApifyDatasetItems(datasetId);
   const posts = items.flatMap((item: Record<string, unknown>) => {
     try { return [transformApifyPost(item)]; } catch { return []; }
-  }).filter((post: { like_count: number }) => post.like_count >= MIN_LIKES);
+  }).filter((post: { like_count: number }) => post.like_count >= MIN_LIKES) as ReturnType<typeof transformApifyPost>[];
 
   // Batch upsert posts (50 at a time)
   const BATCH = 50;
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   const allUpsertedRows: { id: string; hashtags: string[]; caption: string | null }[] = [];
 
   for (let i = 0; i < posts.length; i += BATCH) {
-    const batch = posts.slice(i, i + BATCH).map((post) => {
+    const batch = posts.slice(i, i + BATCH).map((post: ReturnType<typeof transformApifyPost>) => {
       const styles = matchPostStyles({ hashtags: post.hashtags || [], caption: post.caption });
       return { ...post, styles };
     });
